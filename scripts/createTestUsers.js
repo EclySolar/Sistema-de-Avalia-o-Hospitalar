@@ -1,3 +1,64 @@
-require('dotenv').config(); const crypto=require('crypto'),bcrypt=require('bcryptjs'); const fs=require('fs'),path=require('path'); const {pool}=require('../config/database');
-const users=[['Administrador Teste','admin.teste@fhdod.test','SUPER_ADMIN',[]],['Administrador de Setor Teste','setor.teste@fhdod.test','SECTOR_ADMIN',['pronto-atendimento']],['Gestor Teste','gestao.teste@fhdod.test','MANAGEMENT',['pronto-atendimento','teste-funcionalidade']]];
-(async()=>{const [tables]=await pool.query('SHOW TABLES');if(!tables.length)throw Error('Execute npm run db:migrate antes.');const passwords=[];for(const [name,email,role,slugs] of users){let [found]=await pool.execute('SELECT id FROM users WHERE email=?',[email]);let id;if(found[0])id=found[0].id;else{const password=crypto.randomBytes(18).toString('base64url');const hash=await bcrypt.hash(password,12);const[x]=await pool.execute('INSERT INTO users(name,email,password_hash,role,active) VALUES(?,?,?,?,1)',[name,email,hash,role]);id=x.insertId;passwords.push(`${email}: ${password}`)}for(const slug of slugs){const[s]=await pool.execute('SELECT id FROM sectors WHERE slug=?',[slug]);if(s[0])await pool.execute('INSERT IGNORE INTO user_sectors(user_id,sector_id) VALUES(?,?)',[id,s[0].id])}}if(passwords.length){const file=path.join(__dirname,'..','.test-credentials.local');fs.writeFileSync(file,passwords.join('\n')+'\n',{mode:0o600});console.log('Usuários criados. Credenciais novas foram gravadas em .test-credentials.local (ignorado pelo Git).')}else console.log('Usuários já existiam; nenhuma senha foi alterada.');await pool.end()})().catch(e=>{console.error('Falha:',e.message);process.exit(1)});
+require("dotenv").config();
+const crypto = require("crypto"),
+  bcrypt = require("bcryptjs");
+const fs = require("fs"),
+  path = require("path");
+const { pool } = require("../config/database");
+const users = [
+  ["Administrador Teste", "admin.teste@fhdod.test", "SUPER_ADMIN", []],
+  [
+    "Administrador de Setor Teste",
+    "setor.teste@fhdod.test",
+    "SECTOR_ADMIN",
+    ["pronto-atendimento"],
+  ],
+  [
+    "Gestor Teste",
+    "gestao.teste@fhdod.test",
+    "MANAGEMENT",
+    ["pronto-atendimento", "teste-funcionalidade"],
+  ],
+];
+(async () => {
+  const [tables] = await pool.query("SHOW TABLES");
+  if (!tables.length) throw Error("Execute npm run db:migrate antes.");
+  const passwords = [];
+  for (const [name, email, role, slugs] of users) {
+    let [found] = await pool.execute("SELECT id FROM users WHERE email=?", [
+      email,
+    ]);
+    let id;
+    if (found[0]) id = found[0].id;
+    else {
+      const password = crypto.randomBytes(18).toString("base64url");
+      const hash = await bcrypt.hash(password, 12);
+      const [x] = await pool.execute(
+        "INSERT INTO users(name,email,password_hash,role,active) VALUES(?,?,?,?,1)",
+        [name, email, hash, role],
+      );
+      id = x.insertId;
+      passwords.push(`${email}: ${password}`);
+    }
+    for (const slug of slugs) {
+      const [s] = await pool.execute("SELECT id FROM sectors WHERE slug=?", [
+        slug,
+      ]);
+      if (s[0])
+        await pool.execute(
+          "INSERT IGNORE INTO user_sectors(user_id,sector_id) VALUES(?,?)",
+          [id, s[0].id],
+        );
+    }
+  }
+  if (passwords.length) {
+    const file = path.join(__dirname, "..", ".test-credentials.local");
+    fs.writeFileSync(file, passwords.join("\n") + "\n", { mode: 0o600 });
+    console.log(
+      "Usuários criados. Credenciais novas foram gravadas em .test-credentials.local (ignorado pelo Git).",
+    );
+  } else console.log("Usuários já existiam; nenhuma senha foi alterada.");
+  await pool.end();
+})().catch((e) => {
+  console.error("Falha:", e.message);
+  process.exit(1);
+});

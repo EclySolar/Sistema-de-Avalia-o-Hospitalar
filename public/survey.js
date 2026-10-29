@@ -1,1 +1,60 @@
-const slug=location.pathname.split('/').pop(),form=document.querySelector('#survey'),box=document.querySelector('#questions'),msg=document.querySelector('#message');let qs=[];const choices=(q,a)=>`<div class="choices">${a.map(v=>`<label><input type="radio" name="q${q.id}" value="${v}" ${q.required?'required':''}>${q.type==='rating_5'?'🙂 ':''}${v}</label>`).join('')}</div>`;fetch('/api/public/sectors/'+encodeURIComponent(slug)).then(r=>r.json()).then(x=>{if(!x.success)throw Error(x.message);qs=x.data.questions;document.querySelector('#title').textContent='Pesquisa: '+x.data.sector.name;box.innerHTML=qs.map(q=>{let body=q.type==='text'?`<textarea name="q${q.id}" maxlength="1000" placeholder="Opcional, até 1000 caracteres"></textarea>`:q.type==='nps_10'?choices(q,[0,1,2,3,4,5,6,7,8,9,10]):q.type==='rating_5'?choices(q,[1,2,3,4,5]):choices(q,q.options);return `<div class="question"><strong>${q.title}${q.required?' *':''}</strong>${q.type==='nps_10'?'<small>0 = Não recomendaria · 10 = Recomendaria com certeza</small>':''}${body}</div>`}).join('')}).catch(e=>msg.textContent=e.message);form.onsubmit=async e=>{e.preventDefault();const d=new FormData(form),answers=[];for(const q of qs){let v=d.get('q'+q.id);if(v===null||v==='')continue;if(['rating_5','nps_10'].includes(q.type))v=Number(v);answers.push({questionId:q.id,value:v})}const button=form.querySelector('button');button.disabled=true;try{const r=await fetch('/api/public/surveys/'+slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attendanceDate:d.get('attendanceDate'),shift:d.get('shift'),answers})}),x=await r.json();msg.textContent=x.message;if(x.success)form.reset()}catch(_){msg.textContent='Não foi possível enviar agora.'}finally{button.disabled=false}};
+const slug = location.pathname.split("/").pop(),
+  form = document.querySelector("#survey"),
+  box = document.querySelector("#questions"),
+  msg = document.querySelector("#message");
+let qs = [];
+const choices = (q, a) =>
+  `<div class="choices">${a.map((v) => `<label><input type="radio" name="q${q.id}" value="${v}" ${q.required ? "required" : ""}>${q.type === "rating_5" ? "🙂 " : ""}${v}</label>`).join("")}</div>`;
+fetch("/api/public/sectors/" + encodeURIComponent(slug))
+  .then((r) => r.json())
+  .then((x) => {
+    if (!x.success) throw Error(x.message);
+    qs = x.data.questions;
+    document.querySelector("#title").textContent =
+      "Pesquisa: " + x.data.sector.name;
+    box.innerHTML = qs
+      .map((q) => {
+        let body =
+          q.type === "text"
+            ? `<textarea name="q${q.id}" maxlength="1000" placeholder="Opcional, até 1000 caracteres"></textarea>`
+            : q.type === "nps_10"
+              ? choices(q, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+              : q.type === "rating_5"
+                ? choices(q, [1, 2, 3, 4, 5])
+                : choices(q, q.options);
+        return `<div class="question"><strong>${q.title}${q.required ? " *" : ""}</strong>${q.type === "nps_10" ? "<small>0 = Não recomendaria · 10 = Recomendaria com certeza</small>" : ""}${body}</div>`;
+      })
+      .join("");
+  })
+  .catch((e) => (msg.textContent = e.message));
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const d = new FormData(form),
+    answers = [];
+  for (const q of qs) {
+    let v = d.get("q" + q.id);
+    if (v === null || v === "") continue;
+    if (["rating_5", "nps_10"].includes(q.type)) v = Number(v);
+    answers.push({ questionId: q.id, value: v });
+  }
+  const button = form.querySelector("button");
+  button.disabled = true;
+  try {
+    const r = await fetch("/api/public/surveys/" + slug, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attendanceDate: d.get("attendanceDate"),
+          shift: d.get("shift"),
+          answers,
+        }),
+      }),
+      x = await r.json();
+    msg.textContent = x.message;
+    if (x.success) form.reset();
+  } catch (_) {
+    msg.textContent = "Não foi possível enviar agora.";
+  } finally {
+    button.disabled = false;
+  }
+};

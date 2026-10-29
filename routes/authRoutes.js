@@ -1,1 +1,51 @@
-const router=require('express').Router(),bcrypt=require('bcryptjs');const {body,validationResult}=require('express-validator');const{pool}=require('../config/database');const{requireAuth}=require('../middleware/access');router.post('/login',[body('email').isEmail().normalizeEmail(),body('password').notEmpty()],async(req,res,next)=>{try{if(!validationResult(req).isEmpty())return res.status(400).json({success:false,message:'Credenciais inválidas.'});const[r]=await pool.execute('SELECT id,name,email,password_hash,role,active FROM users WHERE email=?',[req.body.email]);const u=r[0];if(!u||!u.active||!(await bcrypt.compare(req.body.password,u.password_hash)))return res.status(401).json({success:false,message:'E-mail ou senha inválidos.'});req.session.user={id:u.id,name:u.name,email:u.email,role:u.role};await pool.execute('UPDATE users SET last_login_at=NOW() WHERE id=?',[u.id]);res.json({success:true,data:{user:req.session.user}})}catch(e){next(e)}});router.get('/me',requireAuth,(req,res)=>res.json({success:true,data:{user:req.session.user}}));router.post('/logout',requireAuth,(req,res)=>req.session.destroy(()=>res.json({success:true,message:'Sessão encerrada.'})));module.exports=router;
+const router = require("express").Router(),
+  bcrypt = require("bcryptjs");
+const { body, validationResult } = require("express-validator");
+const { pool } = require("../config/database");
+const { requireAuth } = require("../middleware/access");
+router.post(
+  "/login",
+  [body("email").isEmail().normalizeEmail(), body("password").notEmpty()],
+  async (req, res, next) => {
+    try {
+      if (!validationResult(req).isEmpty())
+        return res
+          .status(400)
+          .json({ success: false, message: "Credenciais inválidas." });
+      const [r] = await pool.execute(
+        "SELECT id,name,email,password_hash,role,active FROM users WHERE email=?",
+        [req.body.email],
+      );
+      const u = r[0];
+      if (
+        !u ||
+        !u.active ||
+        !(await bcrypt.compare(req.body.password, u.password_hash))
+      )
+        return res
+          .status(401)
+          .json({ success: false, message: "E-mail ou senha inválidos." });
+      req.session.user = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+      };
+      await pool.execute("UPDATE users SET last_login_at=NOW() WHERE id=?", [
+        u.id,
+      ]);
+      res.json({ success: true, data: { user: req.session.user } });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get("/me", requireAuth, (req, res) =>
+  res.json({ success: true, data: { user: req.session.user } }),
+);
+router.post("/logout", requireAuth, (req, res) =>
+  req.session.destroy(() =>
+    res.json({ success: true, message: "Sessão encerrada." }),
+  ),
+);
+module.exports = router;

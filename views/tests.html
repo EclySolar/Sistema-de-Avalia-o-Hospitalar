@@ -1,1 +1,29 @@
-<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/assets/style.css"><main><h1>Ambiente de Testes — FHDOD</h1><p id="status">Carregando diagnóstico…</p><p><a href="/pesquisa/teste-funcionalidade">Abrir pesquisa demonstrativa</a></p><button onclick="location.reload()">Atualizar</button></main><script>fetch('/api/testes/status').then(async r=>{let j=await r.json();if(!r.ok)throw Error(j.message);document.querySelector('#status').innerHTML=`MySQL: ${j.data.database}<br>Usuários de teste: ${j.data.testUsers}<br>Perguntas: ${j.data.testQuestions}<br>Avaliações demonstrativas: ${j.data.testSurveys}<br>NPS demonstrativo: ${j.data.testNps??'—'}`}).catch(e=>document.querySelector('#status').textContent='Acesso restrito ao Super Admin: '+e.message)</script>
+<!doctype html>
+<html lang="pt-BR">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><link rel="stylesheet" href="/assets/style.css" />
+  <main>
+    <h1>Ambiente de Testes — FHDOD</h1>
+    <p id="status">Carregando diagnóstico…</p>
+    <p>
+      <a href="/pesquisa/teste-funcionalidade">Abrir pesquisa demonstrativa</a>
+    </p>
+    <button onclick="location.reload()">Atualizar</button>
+  </main>
+  <script>
+    fetch("/api/testes/status")
+      .then(async (r) => {
+        let j = await r.json();
+        if (!r.ok) throw Error(j.message);
+        document.querySelector("#status").innerHTML =
+          `MySQL: ${j.data.database}<br>Usuários de teste: ${j.data.testUsers}<br>Perguntas: ${j.data.testQuestions}<br>Avaliações demonstrativas: ${j.data.testSurveys}<br>NPS demonstrativo: ${j.data.testNps ?? "—"}`;
+      })
+      .catch(
+        (e) =>
+          (document.querySelector("#status").textContent =
+            "Acesso restrito ao Super Admin: " + e.message),
+      );
+  </script>
+</html>

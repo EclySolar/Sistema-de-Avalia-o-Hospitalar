@@ -1,1 +1,10 @@
-CREATE TABLE IF NOT EXISTS question_options(id INT AUTO_INCREMENT PRIMARY KEY,question_id INT NOT NULL,label VARCHAR(255) NOT NULL,value VARCHAR(120) NOT NULL,display_order INT NOT NULL DEFAULT 0,UNIQUE(question_id,value),FOREIGN KEY(question_id) REFERENCES questions(id));
+CREATE TABLE
+    IF NOT EXISTS question_options (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        question_id INT NOT NULL,
+        label VARCHAR(255) NOT NULL,
+        value VARCHAR(120) NOT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        UNIQUE (question_id, value),
+        FOREIGN KEY (question_id) REFERENCES questions (id)
+    );
